@@ -1,13 +1,94 @@
 import React from 'react';
 
+
+import TodoList from './components/TodoComponents/TodoList';
+import TodoForm from './components/TodoComponents/TodoForm';
+import TodoSearch from './components/TodoComponents/TodoSearch';
+
 class App extends React.Component {
-  // you will need a place to store your state in this component.
-  // design `App` to be the parent component of your application.
-  // this component is going to take care of state, and any change handlers you need to work with your state
+  constructor(props) {
+    super(props);
+    this.state = {
+      taskList: this.grabLocalStorageTaskList()
+    }
+  }
+  grabLocalStorageTaskList = () => {
+    const localStorageTaskList = localStorage.getItem('taskList')
+    if (localStorageTaskList) {
+      return JSON.parse(localStorageTaskList);
+    }
+    return [];
+  }
+  addTodo = taskName => e => {
+    e.preventDefault();
+    const task = {
+      taskName: taskName,
+      id: Date.now(),
+      
+      completed: false,
+      filtered: false
+    }
+    this.setState(prevState => {
+      const newTaskList = [...prevState.taskList, task]
+      localStorage.setItem('taskList', JSON.stringify(newTaskList));
+      return {taskList: [...prevState.taskList, task]};
+    });
+  }
+  toggleTodoCompletion = id => e => {
+    this.setState(prevState => {
+      let taskList = prevState.taskList;
+     
+      const idx = taskList.map(el => el.id).indexOf(id);
+      taskList[idx].completed = !taskList[idx].completed;
+      return {
+        taskList: taskList
+      }
+    });
+    localStorage.setItem('taskList', JSON.stringify(this.state.taskList));
+  }
+  clearCompletedTodos = e => {
+    e.preventDefault();
+    this.setState(prevState => {
+      
+      const updatedTaskList = prevState.taskList.filter(el => !el.completed);
+      localStorage.setItem('taskList', JSON.stringify(updatedTaskList));
+      return {taskList: updatedTaskList}
+    });
+  }
+
+  searchTodos = search => e => {
+    e.preventDefault();
+    this.setState(prevState => {
+      let taskList = prevState.taskList;
+      taskList.filter(el => !el.taskName.includes(search)).forEach(el => el.filtered = true)
+      return {taskList: taskList}
+    });
+  }
+
+  clearSearchFilter = e => {
+    e.preventDefault();
+    this.setState(prevState => {
+      const updatedTaskList = prevState.taskList;
+      updatedTaskList.forEach(el => el.filtered = false);
+      return {taskList: updatedTaskList}
+    });
+  }
+
   render() {
     return (
-      <div>
-        <h2>Welcome to your Todo App!</h2>
+      <div className="container">
+        <TodoForm 
+          addTodo={this.addTodo} 
+          clearCompletedTodos={this.clearCompletedTodos}
+        />
+        <TodoSearch
+          searchTodos={this.searchTodos}
+          clearSearchFilter={this.clearSearchFilter}
+        />
+        <TodoList 
+          taskList={this.state.taskList}
+          toggleTodoCompletion={this.toggleTodoCompletion}
+        />
       </div>
     );
   }
